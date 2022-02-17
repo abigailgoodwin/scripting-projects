@@ -1,7 +1,6 @@
 #!/usr/bin/python3
-# Abigail Goodwin
-# Lab 5 - Database Loader
-# CS 3030 - Scripting Languages
+# Database Loader Script
+# Abigail Goodwin <abby.goodwin@outlook.com>
 
 #--------------------- Imports ----------------------
 import sqlite3
