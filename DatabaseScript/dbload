@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # Database Loader Script
-# Abigail Goodwin <abby.goodwin@outlook.com>
+# Author: Abigail Goodwin <abby.goodwin@outlook.com>
 
 #--------------------- Imports ----------------------
 import sqlite3
