@@ -1,7 +1,5 @@
 #!/bin/bash
-# Abigail Goodwin
-# Lab 3 - Failed Login Report
-# CS 3030 - Scripting Languages
+# Author: Abigail Goodwin <abby.goodwin@outlook.com>
 
 # Verify Input File Exists
 if [ $# -eq 1 ] ; then
