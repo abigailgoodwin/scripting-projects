@@ -1,0 +1,121 @@
+#!/usr/bin/python3
+# Abigail Goodwin
+# Lab 5 - Database Loader
+# CS 3030 - Scripting Languages
+
+#--------------------- Imports ----------------------
+import sqlite3
+import sys
+import csv
+
+#---------------- Method Definitions ----------------
+
+# Checks if the course exists already in the DB.
+def inCourseTable(cursor, wNum, subjectCode, courseNumber):
+    rowsReturned = (cursor.execute('''SELECT * FROM courses WHERE id="{0}" AND subjcode="{1}" AND coursenumber="{2}"'''.format(wNum, courseNumber, subjectCode))).fetchall()
+    if len(rowsReturned) > 0:
+        return True
+    else:
+        return False
+
+
+# Checks if the person exists already in the DB.
+def inPersonTable(cursor, id):
+    rowsReturned = (cursor.execute('''SELECT * FROM people WHERE id="{0}"'''.format(id))).fetchall()
+
+    if len(rowsReturned) > 0:
+        return True
+    else:
+        return False
+
+# Wipes the DB and Repopulates With Tables
+def resetDB(cursor):
+    # Step 1: Drop Existing Tables
+    cursor.execute('''DROP TABLE IF EXISTS courses''')
+    cursor.execute('''DROP TABLE IF EXISTS people''')
+
+    # Step 2: Create Tables
+    #   Course Table
+    cursor.execute('''CREATE TABLE courses (id TEXT, subjcode TEXT, coursenumber TEXT, termcode TEXT)''')
+    #   People Table
+    cursor.execute('''CREATE TABLE people (id TEXT PRIMARY KEY UNIQUE, lastname TEXT, firstname TEXT, email TEXT, major TEXT, city TEXT, state TEXT, zip TEXT)''')
+
+def insertPerson(cursor, personData):
+    cursor.execute('''INSERT INTO people (id, lastname, firstname, email, major, city, state, zip) VALUES (?,?,?,?,?,?,?,?)''', personData)
+
+def insertCourse(cursor, courseData):
+    cursor.execute('''INSERT INTO courses (id, subjcode, coursenumber, termcode) VALUES (?,?,?,?)''', courseData)
+
+def insertRow(cursor, rowData):
+    # Step 1: Check If Person Already Exists
+    if not inPersonTable(cursor, rowData[0]):
+        # Step 2: Pluck out Person's Data
+        #   Going to format according to the insert statement's order (i.e. lastname before firstname)
+        personData = (rowData[0], rowData[2], rowData[1], rowData[3], rowData[4], rowData[7], rowData[8], rowData[9])
+
+        insertPerson(cursor, personData)
+    
+    # Step 3: Split Course Info
+    splitCourseInfo = rowData[5].split(" ")
+    subjCode = splitCourseInfo[0]
+    courseNumber = splitCourseInfo[1]
+
+    # Step 4: Check if Course Already Exists
+    if not inCourseTable(cursor, rowData[0], subjCode, courseNumber): 
+        courseData = (rowData[0], subjCode, courseNumber, rowData[6])
+
+        insertCourse(cursor, courseData)
+
+#------------------------ Main -----------------------
+
+# Step 1: Check Commandline Args
+if (len(sys.argv) != 3):
+    print("Usage: dbload CSVFILE DATABASEFILE")
+    exit(1)
+
+# Step 2: Try to Open DB Connection
+cursor = 0
+connection = 0
+database = sys.argv[2]
+try:
+    connection = sqlite3.connect(database)
+    cursor = connection.cursor()
+except Exception as e:
+    print("Error: Failed to establish database {0}.\n".format(database))
+    print(e)
+    exit(1)
+
+# Step 3: Try to Open CSV File
+csvFile = sys.argv[1]
+try:
+    csvReader = csv.reader(open(csvFile, 'r'), delimiter=',', quotechar='"')
+except Exception as e:
+    print("Error: Failed to open csv file {0}.\n".format(csvFile))
+    print(e)
+    exit(1)
+
+# Step 4: Reset the Database, Create Tables
+resetDB(cursor)
+
+# Step 5: Iterate Over CSV, Add Data to DB
+rowCounter = 0
+
+for row in csvReader:
+    rowCounter += 1
+
+    # Check to Avoid Header Row
+    if rowCounter == 1:
+        continue
+
+    # Read Row of Data (0-9) and Insert Data into DB
+    rowData = (row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])
+    insertRow(cursor, rowData)
+
+# Last Step: Committ Changes!
+connection.commit()
+
+# Done!
+exit(0)
+
+
+

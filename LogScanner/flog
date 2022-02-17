@@ -1,0 +1,56 @@
+#!/bin/bash
+# Abigail Goodwin
+# Lab 3 - Failed Login Report
+# CS 3030 - Scripting Languages
+
+# Verify Input File Exists
+if [ $# -eq 1 ] ; then
+    # Step 1: Create Temp Directories
+    tempDir="/tmp/$USER"
+    mkdir $tempDir
+
+    # Step 2: Create Temp Files
+    touch $tempDir/userList # Contains all login failures
+    touch $tempDir/sortedUserList # Contains the sorted user list
+    touch $tempDir/countList # Contains the users next to their fail count
+    touch $tempDir/webList # Contains the unsorted HTML version of the list
+    touch $tempDir/sortedWebList # Contains the sorted HTML version of the list
+    touch $tempDir/webPage # Contains the HTML Report, complete with headers
+
+
+    # Step 3: Grab All Login Failures from Log File
+    sed -n 's/.*Failed password for \([a-z0-9A-Z_]*\) .*/\1/p' $1 >$tempDir/userList
+
+    # Step 4: Sort All Failed Users Alphabetically
+    sort $tempDir/userList >$tempDir/sortedUserList
+
+    # Step 5: Count Up Users
+    uniq -c <$tempDir/sortedUserList >$tempDir/countList
+
+    # Step 6: Replace "invalid" with "&ls;UNKNOWN&gt;"
+    sed 's#invalid#\&lt;UNKNOWN\&gt;#' <$tempDir/countList >$tempDir/webList
+
+    # Step 7: Sort the webList
+    sort -k1,1nr -k2,2 $tempDir/webList >$tempDir/sortedWebList
+
+    # Step 8: Create HTML Report
+    #   Inserting Header
+    echo -e "<html>\n<body><h1>Failed Login Attempts Report as of $(date)</h1>\n" >>$tempDir/webPage
+
+    #   Insert Report, Line-by-Line, and Add Commas to Nums
+    cat $tempDir/sortedWebList | while read userCount userID; do
+        printf "<br />%'d %s\n" "$userCount" "$userID" >>$tempDir/webPage
+    done
+    echo -e "</body> </html>" >>$tempDir/webPage
+
+    # Step 9: Output HTML Report
+    cat $tempDir/webPage
+
+    # Last Step: Remove Temp Filess
+    rm -r $tempDir
+
+    exit 0
+else
+    echo "Usage: srpt FOLDER"
+    exit 1
+fi
